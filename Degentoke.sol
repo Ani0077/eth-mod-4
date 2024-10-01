@@ -1,11 +1,12 @@
+
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 
-contract MyERC20 is ERC20, Ownable(msg.sender) {
+contract DegenToken is ERC20, Ownable(msg.sender) {
 
     struct Item {
         uint itemId;
@@ -20,22 +21,28 @@ contract MyERC20 is ERC20, Ownable(msg.sender) {
     mapping(address => mapping(uint => bool)) public redeemedItems;
 
     // Event to log item redemption
+    event RedeemToken(address account, uint rewardCategory);
+    event BurnToken(address account, uint amount);
     event ItemRedeemed(address indexed user, uint indexed itemId, string itemName, uint itemPrice);
 
     constructor() ERC20("Degen", "DGN") {
         transferOwnership(msg.sender);
     }
 
-    function mint(address receiver, uint amount) external onlyOwner {
+    function mint(address receiver, uint amount) public{
         _mint(receiver, amount);
     }
 
-    function burn(uint amount) external {
-        require(amount > 0, "Amount should not be zero");
+    function burn(uint amount) public {
         _burn(msg.sender, amount);
+        emit BurnToken(msg.sender, amount);
+    }
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        _transfer(_msgSender(), to, amount);
+        return true;
     }
 
-    function addItem(string memory itemName, uint itemPrice) external onlyOwner {
+    function addItem(string memory itemName, uint itemPrice) public{
         itemCount++;
         Item memory newItem = Item(itemCount, itemName, itemPrice);
         items[itemCount] = newItem;
@@ -51,7 +58,7 @@ contract MyERC20 is ERC20, Ownable(msg.sender) {
         return allItems;
     }
 
-    function redeem(uint itemId) external {
+     function redeem(uint itemId) external {
     require(itemId > 0 && itemId <= itemCount, "Invalid item ID");
     Item memory redeemedItem = items[itemId];
 
@@ -63,5 +70,5 @@ contract MyERC20 is ERC20, Ownable(msg.sender) {
     redeemedItems[msg.sender][itemId] = true;
 
     emit ItemRedeemed(msg.sender, itemId, redeemedItem.itemName, redeemedItem.itemPrice);
-}
+     }
 }
